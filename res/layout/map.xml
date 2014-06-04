@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/LinearLayout1"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <CheckBox
+        android:id="@+id/mapViewLock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/mapPanLockLabel"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true" />
+    
+    <TextView
+        android:id="@+id/mapStartPointSpinnerLabel"
+        android:layout_marginLeft="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/mapViewLock"
+        android:layout_toRightOf="@id/mapViewLock"
+        android:text="@string/mapStartPointSpinnerLabel" />
+    
+    <Spinner
+        android:id="@+id/mapStartPointSpinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/mapViewLock"
+        android:layout_toRightOf="@id/mapStartPointSpinnerLabel" />
+
+    <LinearLayout
+        android:id="@+id/mapViewContainer"
+        android:background="#ffffff"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@id/mapViewLock" >
+
+         <com.example.hello2.TouchImageView
+             android:id="@+id/mapView"
+             android:layout_width="fill_parent"
+             android:layout_height="fill_parent"
+             android:layout_gravity="center"
+              />
+
+    </LinearLayout>
+
+    
+
+</RelativeLayout>

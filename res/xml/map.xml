@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <map
+        src="@drawable/i3floor2"
+        name="i3 2nd floor"
+        width="1900"
+        height="1500"
+        rotation="-70"
+        orientationOffset="66"
+        inverty="-1"
+        m2px="17.0"
+        default="true">
+        	<map_point name="Corridor start" x="1600" y="935" default="true"/>
+        	<map_point name="Corridor end" x="770" y="647" />
+        	<map_point name="AMI Lab Bathroom" x="1359" y="642" />
+        	<map_point name="TM Desk" x="1600" y="818" />
+        	<wifi_ap bssid="00:27:0d:49:4b" x="1479" y="859" label="AMI lab outside meeting room" />
+        	<wifi_ap bssid="d4:d7:48:44:c7" x="1305" y="802" label="NEXT lab corridor" />
+        	<wifi_ap bssid="00:27:0d:49:49" x="976" y="720" label="Social cognitive lab" />
+        	<wifi_ap bssid="2" x="637" y="724" label="general office" />
+        	<wifi_ap bssid="00:27:0d:8b:8b" x="578" y="422" label="pantry" />
+    </map>
+</resources>
