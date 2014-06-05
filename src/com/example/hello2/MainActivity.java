@@ -74,6 +74,7 @@ public class MainActivity extends FragmentActivity{
 	 */
 	public void init() {
 		deadReckoningTimer = new Timer();
+		//Run DeadReckoning at 10 ms rate (100Hz)
 		deadReckoningTimer.scheduleAtFixedRate(new deadReckoningTask(), 0, 10);
 		
 		if(this.wifiLocationFixing) {
@@ -106,7 +107,7 @@ public class MainActivity extends FragmentActivity{
         this.diu = new DynamicInfoUpdater(this.infoClassMap);
 
         this.reloadSettings();
-        sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri.parse("file://"
+        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://"
                 + Environment.getExternalStorageDirectory())));
     }
     

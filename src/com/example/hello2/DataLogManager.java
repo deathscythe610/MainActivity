@@ -123,7 +123,7 @@ public class DataLogManager {
 	}
 	
 	public static void refreshLogs() {
-		MainActivity.getInstance().sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri.parse("file://"
+		MainActivity.getInstance().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://"
                 + Environment.getExternalStorageDirectory()+"/Logs"))); 
 //		File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/Logs");
 //		new SingleMediaScanner(m, Environment

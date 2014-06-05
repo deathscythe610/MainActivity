@@ -18,8 +18,8 @@ public class DataLog {
 	private String data = "";
 	private long lastTime = 0;
 	private int lineCount=0;
-	private String filePath;
 	private String fileName;
+	private File filePath;
 	private String prefix;
 	private Boolean log = true;
 	private DataLogInterface dli=null;
@@ -43,7 +43,7 @@ public class DataLog {
 	
 	public void createFileName() {
 		this.fileName = this.prefix+this.getDateTime()+".txt";
-		this.filePath = "Logs/"+this.fileName;
+		//this.filePath = "Logs/"+this.fileName;
 	}
 	
 	public void restartLogging() {
@@ -119,10 +119,14 @@ public class DataLog {
 			Misc.toast("Nothing to save (DL:"+this.prefix+")");
 			return;
 		}
-    	File timeFile = new File(Environment
-    	          .getExternalStorageDirectory().getAbsolutePath(), this.filePath);
+    	filePath = new File(Environment.getExternalStorageDirectory()
+				+ File.separator + "Log_DR");
+    	if (!filePath.exists())
+		{
+			filePath.mkdirs();
+		}
+    	File timeFile = new File(filePath, this.fileName);	
         try{
-    		
     		OutputStream timeOS = new FileOutputStream(timeFile,true);
     		OutputStreamWriter timeOSW = new OutputStreamWriter(timeOS);
     		timeOSW.write(this.data);
@@ -143,7 +147,7 @@ public class DataLog {
 	
 	public String debugInfo() {
 		String data = "";
-		data += "Name: "+this.filePath+"\n";
+		data += "Name: "+ this.filePath +"\n";
 		data += "LineCount: "+this.lineCount+"\n";
 		data += "Log: "+this.log.toString()+"\n";
 		data += "\n";
