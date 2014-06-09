@@ -10,6 +10,7 @@ import java.util.Date;
 
 import android.os.Environment;
 import android.util.Log;
+import android.widget.Toast;
 
 public class DataLog {
 	private static final String TAG = "TM_DataLog";
@@ -120,9 +121,10 @@ public class DataLog {
 			return;
 		}
     	filePath = new File(Environment.getExternalStorageDirectory()
-				+ File.separator + "Log_DR");
+				+ File.separator + "Log_MainActivity");
     	if (!filePath.exists())
 		{
+    		System.out.println("Create new directory :" + filePath.toString());
 			filePath.mkdirs();
 		}
     	File timeFile = new File(filePath, this.fileName);	

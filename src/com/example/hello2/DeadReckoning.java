@@ -32,6 +32,16 @@ public class DeadReckoning extends Info implements Runnable {
 	private ParameterEstimation paramEst = null;
 	private boolean calibrationLogging = false;
 	public boolean stateLogging=false;
+	//define separate constant for zhanhy step detection algorithm 
+	private boolean IsGoUp = true;
+	private int halfsteps = 0;
+	private long zhanhy_stepDelay = 100;
+	private float zhanhy_thresholdMax = 1f;
+	private float zhanhy_thresholdMin = -0.9f;
+	private float min_dif = 2.5f;
+	private long zhanhy_minstep_delay = 80;
+	private long zhanhy_maxstep_delay = 1000;
+	
 
 	public DeadReckoning() {
 		super();
@@ -87,7 +97,18 @@ public class DeadReckoning extends Info implements Runnable {
 		valuesMap.put("statesLog", this.stateLog);
 		valuesMap.put("distance", this.distance+" ("+this.distanceX+", "+this.distanceY+")");
 	}
-		
+	
+	/**
+	 * This is an added function for zhanhy detection algorithm
+	 * This function count the occurrence of half steps (a single max or min peak)
+	 * @param orientation
+	 * @param triggerTime
+	 */
+	void halfstepDetected(double orientation, long triggerTime){
+		this.halfsteps++;
+		this.lastStepTime = triggerTime; 
+	}
+	
 	void stepDetected(double orientation, long triggerTime) {
 		this.steps++;
 		this.lastStepTime=triggerTime;
@@ -105,6 +126,127 @@ public class DeadReckoning extends Info implements Runnable {
 		this.stateLog = line + " ("+this.steps+")\n" + this.stateLog;
 	}
 	
+	/** 
+	 * Zhanhy method use a sampling rate of 20 Hz which is much slower than Thomas (100Hz)
+	 * At peak and valley point, the data tends to go down immediately and do not stay for a long time
+	 * Therefore, aftermax and aftermin state can safely be put away
+	 * Zhanhy method only care if there is any pair of peak and valley but not the order of occurrence    
+	 * @param az
+	 * @param orientation
+	 * @param triggerTime
+	 */
+	protected void trigger_zhanhy(float az, float orientation) {
+		this.trigger_zhanhy(az, orientation, Misc.getTime());
+	}
+	
+	protected void trigger_zhanhy(float az, float orientation, long triggerTime){
+		if(this.paramEst!=null && this.calibrationLogging) {
+			this.paramEst.recordAcceleration(az);
+		}
+		if(az>this.lastMaximum)
+			this.lastMaximum=az;
+		if(az<this.lastMinimum)
+			this.lastMinimum=az;
+		switch (this.state){
+			case IDLE:
+				this.lastMaximum=0;
+				this.lastMinimum=0;
+				if(triggerTime-this.lastStepTime>this.zhanhy_stepDelay  && az>this.zhanhy_thresholdMax ) {
+					this.state=States.MAX_DETECT;
+					//this.addLine("Change to MAX_DETECT");
+				}
+				else if (triggerTime-this.lastStepTime>this.zhanhy_stepDelay  && az<this.zhanhy_thresholdMin ) {
+					this.state=States.MIN_DETECT;
+					//this.addLine("Change to MIN_DETECT");
+				}
+				break;
+			case MAX_DETECT:
+				if(az==this.lastMaximum){
+					//Not yet reach peak, wait for peak
+				}
+				else{								//Reach peak.
+					this.maxThresholdPasses++;
+					this.lastStepTime = triggerTime;
+					this.IsGoUp = false;
+					//this.addLine("Last Maximum: " + this.lastMaximum);
+					this.state=States.MIDSTEP_DELAY;
+				}
+				break;
+			case MIN_DETECT:
+				if(az==this.lastMinimum){
+					//Not yet reach peak, wait for peak
+				}
+				else{								//Reach peak.
+					this.minThresholdPasses++;
+					this.lastStepTime = triggerTime;
+					this.IsGoUp = true;
+					//this.addLine("Last Minimum: " + this.lastMinimum);
+					this.state=States.MIDSTEP_DELAY;	
+				}
+				break;
+				
+			case MIDSTEP_DELAY:
+				if((IsGoUp = false) && (az<this.zhanhy_thresholdMin) && ((triggerTime-lastStepTime)>zhanhy_minstep_delay)){
+					this.state = States.AFTER_MIN_DETECT;
+					//this.addLine("Change to AFTER_MIN_DETECT");
+				}
+				else if((IsGoUp = true) && (az>this.zhanhy_thresholdMax) && ((triggerTime-lastStepTime)>zhanhy_minstep_delay)){
+					this.state = States.AFTER_MAX_DETECT;
+					//this.addLine("Change to AFTER_MAX_DETECT");
+				}
+				else if ((triggerTime - lastStepTime)>zhanhy_maxstep_delay){
+					this.state = States.IDLE;
+					this.addLine("MIDSTEP TO IDLE, Half Step Detected");
+					halfstepDetected(orientation, triggerTime);
+				}
+				break;
+			case AFTER_MIN_DETECT:
+				if (az==this.lastMinimum){
+					//Not yet reach valley, wait for valley
+				}
+				else if((this.lastMaximum-this.lastMinimum)>min_dif){
+					//Valid step
+					this.state = States.IDLE;
+					stepDetected(orientation, triggerTime);
+					this.addLine("step detected: "+this.steps);
+					this.minThresholdPasses++;
+				}
+				else{
+					float difference = this.lastMaximum - this.lastMinimum;
+					this.addLine("Difference too small: " + difference);
+					this.state = States.IDLE;
+				}
+				break;
+			case AFTER_MAX_DETECT:
+				if (az==this.lastMaximum){
+					//Not yet reach valley, wait for valley
+				}
+				else if((this.lastMaximum-this.lastMinimum)>min_dif){
+					//Valid step
+					this.state = States.IDLE;
+					stepDetected(orientation, triggerTime);
+					this.addLine("step detected: "+this.steps);
+					this.maxThresholdPasses++;
+				}
+				else{
+					float difference = this.lastMaximum - this.lastMinimum;
+					this.addLine("Difference too small: " + difference);
+					this.state = States.IDLE;
+				}
+				break;
+		}
+		if(this.stateLogging)
+			DataLogManager.addLine("DR", triggerTime+","+this.state.ordinal()+","+this.steps+","+az+","+this.azAvg());
+		this.azPush(az);
+		
+	}
+	
+	
+	/**
+	 * Thomas step detection algorithm 
+	 * @param az
+	 * @param orientation
+	 */
 	protected void trigger(float az, float orientation) {
 		this.trigger(az, orientation, Misc.getTime());
 	}

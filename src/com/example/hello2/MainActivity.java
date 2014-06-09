@@ -75,8 +75,9 @@ public class MainActivity extends FragmentActivity{
 	public void init() {
 		deadReckoningTimer = new Timer();
 		//Run DeadReckoning at 10 ms rate (100Hz)
+		//Change to 40ms rate (25Hz) for Zhanhy proposed algorithm 
+		//deadReckoningTimer.scheduleAtFixedRate(new deadReckoningTask(), 0, 40);
 		deadReckoningTimer.scheduleAtFixedRate(new deadReckoningTask(), 0, 10);
-		
 		if(this.wifiLocationFixing) {
 			this.wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
 			if(!this.wifiManager.isWifiEnabled()){
@@ -238,7 +239,9 @@ public class MainActivity extends FragmentActivity{
     
     class deadReckoningTask extends TimerTask {
 		public void run() {
-			deadReckoning.trigger(sensorInfo.getWorldAccelerationZ(),sensorInfo.orientationFusion.getOrientation());
+			//Change to Zhanhy_trigger function to implement Zhanhy algorithm
+			deadReckoning.trigger_zhanhy(sensorInfo.getWorldAccelerationZ(),sensorInfo.orientationFusion.getOrientation());
+			//deadReckoning.trigger(sensorInfo.getWorldAccelerationZ(),sensorInfo.orientationFusion.getOrientation());
 		}
 	}
     
