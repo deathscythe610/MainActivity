@@ -40,14 +40,23 @@ public class DeadReckoning extends Info implements Runnable {
 	private float zhanhy_thresholdMin = -0.9f;
 	private float min_dif = 2.5f;
 	private long zhanhy_minstep_delay = 80;
-	private long zhanhy_maxstep_delay = 1000;
+	private long zhanhy_maxstep_delay = 1500;
 	
-
+	//define separate variable for X axis filter 
+	private double axHistory[];
+	private int axHistorySize = 4; 
+	private double ax_thresholdMin = -0.5;
+	private double ax_thresholdMax = 0.5;
+	
 	public DeadReckoning() {
 		super();
 		this.azHistory=new double[this.azHistorySize];
 		for(int i=0;i<this.azHistorySize;i++) {
 			this.azHistory[i]=0;
+		}
+		this.axHistory=new double[this.axHistorySize];
+		for(int i=0;i<this.axHistorySize;i++) {
+			this.axHistory[i]=0;
 		}
 	}
 	
@@ -127,7 +136,7 @@ public class DeadReckoning extends Info implements Runnable {
 	}
 	
 	/** 
-	 * Zhanhy method use a sampling rate of 20 Hz which is much slower than Thomas (100Hz)
+	 * Zhanhy method use a sampling rate of 20 Hz which is much slower than Thomas (100Hz) --> Change to 25Hz 
 	 * At peak and valley point, the data tends to go down immediately and do not stay for a long time
 	 * Therefore, aftermax and aftermin state can safely be put away
 	 * Zhanhy method only care if there is any pair of peak and valley but not the order of occurrence    
@@ -135,11 +144,12 @@ public class DeadReckoning extends Info implements Runnable {
 	 * @param orientation
 	 * @param triggerTime
 	 */
-	protected void trigger_zhanhy(float az, float orientation) {
-		this.trigger_zhanhy(az, orientation, Misc.getTime());
+	protected void trigger_zhanhy(float az, float ax, float orientation) {
+		this.axPush(ax);
+		this.trigger_zhanhy(az, ax, orientation, Misc.getTime());
 	}
 	
-	protected void trigger_zhanhy(float az, float orientation, long triggerTime){
+	protected void trigger_zhanhy(float az, float ax, float orientation, long triggerTime){
 		if(this.paramEst!=null && this.calibrationLogging) {
 			this.paramEst.recordAcceleration(az);
 		}
@@ -153,11 +163,9 @@ public class DeadReckoning extends Info implements Runnable {
 				this.lastMinimum=0;
 				if(triggerTime-this.lastStepTime>this.zhanhy_stepDelay  && az>this.zhanhy_thresholdMax ) {
 					this.state=States.MAX_DETECT;
-					//this.addLine("Change to MAX_DETECT");
 				}
 				else if (triggerTime-this.lastStepTime>this.zhanhy_stepDelay  && az<this.zhanhy_thresholdMin ) {
 					this.state=States.MIN_DETECT;
-					//this.addLine("Change to MIN_DETECT");
 				}
 				break;
 			case MAX_DETECT:
@@ -204,7 +212,7 @@ public class DeadReckoning extends Info implements Runnable {
 				if (az==this.lastMinimum){
 					//Not yet reach valley, wait for valley
 				}
-				else if((this.lastMaximum-this.lastMinimum)>min_dif){
+				else if( ((this.lastMaximum-this.lastMinimum)>min_dif) && (Checkax())){
 					//Valid step
 					this.state = States.IDLE;
 					stepDetected(orientation, triggerTime);
@@ -221,7 +229,7 @@ public class DeadReckoning extends Info implements Runnable {
 				if (az==this.lastMaximum){
 					//Not yet reach valley, wait for valley
 				}
-				else if((this.lastMaximum-this.lastMinimum)>min_dif){
+				else if ( ((this.lastMaximum-this.lastMinimum)>min_dif) && (Checkax()) ){
 					//Valid step
 					this.state = States.IDLE;
 					stepDetected(orientation, triggerTime);
@@ -239,8 +247,21 @@ public class DeadReckoning extends Info implements Runnable {
 			DataLogManager.addLine("DR", triggerTime+","+this.state.ordinal()+","+this.steps+","+az+","+this.azAvg());
 		this.azPush(az);
 		
+		
 	}
 	
+	
+	
+	protected boolean Checkax(){
+		for(int i=0; i<axHistorySize; i++){
+			if ((axHistory[i]<this.ax_thresholdMin) || (axHistory[i]>this.ax_thresholdMax)){
+				//this.addLine("Pass Threshold X Value: " + axHistory[i]);
+				return true;
+			}
+		}
+		//this.addLine("X value not valid");
+		return false; 
+	}
 	
 	/**
 	 * Thomas step detection algorithm 
@@ -332,6 +353,13 @@ public class DeadReckoning extends Info implements Runnable {
 			this.azHistory[i]=this.azHistory[i-1];
 		}
 		this.azHistory[0]=val;
+	}
+	
+	private void axPush(double val) {
+		for(int i=this.axHistorySize-1;i>0;i--) {
+			this.axHistory[i]=this.axHistory[i-1];
+		}
+		this.axHistory[0]=val;
 	}
 	
 	private double azAvg() {

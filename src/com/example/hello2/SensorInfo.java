@@ -336,4 +336,8 @@ public class SensorInfo extends Info  implements SensorEventListener{
 		public float getWorldAccelerationZ() {
 			return (float)this.worldAccelerationZ;
 		}
+		
+		public float getWorldAccelerationX() {
+			return (float)this.worldAccelerationX;
+		}
 }
